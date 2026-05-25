@@ -1,0 +1,1312 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мотивационный атом</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Libraries for PDF generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Roboto', sans-serif;
+    background: #f5f0f8;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: #333;
+    padding: 20px 30px 30px 30px;
+    position: relative;
+  }
+  h1, h2, h3, h4 { font-family: 'Roboto Slab', serif; }
+
+  .global-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+  .global-header h1 { font-size: 22px; color: #333; font-weight: 500; }
+
+  .toggle-instruction {
+    background: #A710EC;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-size: 14px;
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(167,16,236,0.2);
+  }
+  .toggle-instruction:hover { background: #900dd4; transform: translateY(-1px); }
+  .toggle-instruction.visible { opacity: 1; pointer-events: auto; }
+
+  .main-workspace { display: flex; align-items: stretch; width: 100%; flex: 1; gap: 30px; min-height: 0; }
+
+  .field-area { flex: 2; position: relative; height: 100%; transition: all 0.4s ease; }
+  .paper-area {
+    width: 100%; height: 100%; background: #faf8fd; border-radius: 24px; 
+    border: 2px solid #e8dff0; position: relative; overflow: hidden; 
+    box-shadow: 0 4px 30px rgba(167,16,236,0.04);
+  }
+  .paper-inner { position: absolute; inset: 30px; border: 1.5px dashed #e0d6ea; border-radius: 12px; }
+
+  /* --- WOW EFFECT: Pulsing Core --- */
+  @keyframes corePulse {
+    0% { box-shadow: 0 0 30px rgba(167,16,236,0.15), 0 0 0 0 rgba(167,16,236,0.1); }
+    50% { box-shadow: 0 0 50px rgba(167,16,236,0.35), 0 0 80px rgba(167,16,236,0.15); }
+    100% { box-shadow: 0 0 30px rgba(167,16,236,0.15), 0 0 0 0 rgba(167,16,236,0.1); }
+  }
+
+  .center-circle {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    border-radius: 50%; background: #fff;
+    border: 4px solid #A710EC; display: flex; align-items: center; justify-content: center;
+    z-index: 15; 
+    animation: corePulse 3s ease-in-out infinite;
+    transition: all 1.2s ease;
+  }
+  
+  .center-circle.faded {
+    border-color: #e0d6ea;
+    box-shadow: 0 0 10px rgba(224, 214, 234, 0.1);
+    animation: none;
+  }
+  /* --- END WOW EFFECT --- */
+
+  .center-circle span { font-family: 'Roboto Slab', serif; color: #A710EC; font-weight: 700; transition: all 1.2s ease; }
+
+  .cards-wrapper { flex: 1; height: 100%; transition: all 0.4s ease; }
+  .cards-panel {
+    background: #fff; border-radius: 24px; border: 2px solid #e8dff0; 
+    padding: 24px 20px 0 20px; display: flex; flex-direction: column; 
+    box-shadow: 0 4px 30px rgba(167,16,236,0.04); height: 100%; position: relative;
+  }
+  .cards-panel h3 { 
+    font-size: 16px; color: #A710EC; margin-bottom: 4px; font-weight: 700; 
+    transition: all 0.3s ease;
+  }
+  .cards-panel h3.sector-title {
+    padding-right: 32px;
+  }
+  .cards-panel .sub { font-size: 12px; color: #aaa; margin-bottom: 20px; line-height: 1.4; }
+
+  .highlight-tour { z-index: 110 !important; position: relative; outline: 4px solid #A710EC !important; outline-offset: 4px; box-shadow: 0 0 40px rgba(167, 16, 236, 0.5) !important; border-radius: 24px; background: #fff !important; }
+  .highlight-tour-extended { z-index: 110 !important; position: relative; outline: 4px solid #A710EC !important; outline-offset: 4px; box-shadow: 0 0 50px rgba(167, 16, 236, 0.4) !important; border-radius: 18px !important; background: #fff !important; }
+
+  .tour-tooltip { position: fixed; background: #fff; border-radius: 20px; padding: 24px; width: 320px; box-shadow: 0 15px 50px rgba(167, 16, 236, 0.2); z-index: 150; display: none; animation: tooltipFadeIn 0.3s ease; border-left: 5px solid #A710EC; }
+  @keyframes tooltipFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .tour-tooltip p { font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 16px; }
+  .tour-tooltip .tour-btn { background: #A710EC; color: #fff; border: none; padding: 10px 20px; font-family: 'Roboto Slab', serif; font-size: 14px; font-weight: 600; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; float: right; }
+  .tour-tooltip .tour-btn:hover { background: #900dd4; }
+
+  .dim-overlay { position: fixed; inset: 0; background: rgba(20, 10, 30, 0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); transition: opacity 0.5s ease; }
+  .dim-overlay.hidden { opacity: 0; pointer-events: none; }
+  .modal-card { background: #fff; border-radius: 24px; padding: 44px 48px; max-width: 640px; width: 92%; box-shadow: 0 24px 80px rgba(167,16,236,0.15); animation: modalIn 0.4s ease; z-index: 120; }
+  @keyframes modalIn { from { transform: translateY(30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+  .modal-card .icon-top { font-size: 42px; margin-bottom: 12px; text-align: center; }
+  .modal-card .modal-title { font-size: 24px; color: #A710EC; margin-bottom: 16px; text-align: center; }
+  .modal-card .modal-body { text-align: left; }
+  .modal-card .modal-body p { font-size: 15px; line-height: 1.75; color: #333; margin-bottom: 12px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 36px; border: none; border-radius: 14px; font-family: 'Roboto Slab', serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; }
+  .btn-primary { background: #A710EC; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #900dd4; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(167,16,236,0.3); }
+  .btn-primary:disabled { background: #c9a8e6; cursor: not-allowed; }
+
+  .btn-secondary { background: #f5f0f8; color: #555; border: 2px solid #e0d6ea; }
+  .btn-secondary:hover { background: #ebe0f5; border-color: #A710EC; color: #A710EC; }
+
+  .stack-area { flex: 1; position: relative; min-height: 200px; margin-bottom: 16px; overflow-y: auto; }
+  .cards-list { position: relative; width: 100%; height: 100%; }
+
+  .card-item { position: absolute; width: 100%; border-radius: 12px; padding: 12px 14px; min-height: 52px; display: flex; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.35s ease, box-shadow 0.25s ease; }
+  .card-item.is-empty { border: 2px dashed #e8dff0; background: #faf8fd; cursor: default; }
+  .card-item.is-filled { border: 2px solid #A710EC; background: #fff; cursor: grab; user-select: none; }
+  
+  .card-item.pos-0 { z-index: 10; transform: translateY(0) scale(1); opacity: 1; }
+  .card-item.pos-1 { z-index: 9; transform: translateY(15px) scale(0.96); opacity: 0.85; }
+  .card-item.pos-2 { z-index: 8; transform: translateY(30px) scale(0.92); opacity: 0.65; }
+  .card-item.pos-3 { z-index: 7; transform: translateY(45px) scale(0.88); opacity: 0.45; }
+  .card-item.pos-hidden { opacity: 0; pointer-events: none; transform: translateY(60px) scale(0.8); z-index: 1; }
+  .card-item.animating-out { opacity: 0 !important; transform: translateY(-40px) scale(0.8) !important; pointer-events: none !important; }
+
+  .card-item .card-text { font-size: 13px; color: #555; font-weight: 500; word-break: break-word; flex: 1; pointer-events: none; }
+  .card-item .card-num { font-size: 9px; color: #A710EC; flex-shrink: 0; margin-left: 8px; pointer-events: none; background: #f5eaff; padding: 2px 6px; border-radius: 8px; }
+  .card-item .edit-input { width: 100%; border: none; background: transparent; font-size: 13px; color: #555; font-weight: 500; outline: none; }
+  .card-item .edit-input::placeholder { color: #aaa; font-style: italic; font-weight: 400; }
+
+  .drag-ghost { position: fixed; background: #fffbe6; border: 2px solid #A710EC; border-radius: 10px; padding: 10px 16px; font-size: 13px; color: #555; font-weight: 500; box-shadow: 0 8px 30px rgba(167,16,236,0.3); z-index: 9999; pointer-events: none; max-width: 200px; word-break: break-word; opacity: 0.95; transform: rotate(-3deg); }
+  
+  .placed-motivator { 
+    position: absolute; 
+    background: #fffbe6; 
+    border: 2px solid #f0e6b0; 
+    border-radius: 10px; 
+    padding: 8px 14px; 
+    font-size: 12px; 
+    color: #555; 
+    font-weight: 500; 
+    cursor: move; 
+    z-index: 20; 
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08); 
+    user-select: none; 
+    max-width: 150px; 
+    text-align: center; 
+    word-break: break-word;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    transform-origin: center center;
+    pointer-events: auto;
+  }
+  .placed-motivator.locked { cursor: default; box-shadow: none; }
+  
+  /* --- WOW EFFECT: Pulsing Card Glow --- */
+  @keyframes cardPulseGlow {
+    0% { box-shadow: 0 4px 16px rgba(167,16,236,0.15), 0 0 0 0 rgba(167,16,236,0.1); }
+    50% { box-shadow: 0 4px 24px rgba(167,16,236,0.3), 0 0 15px rgba(167,16,236,0.15); }
+    100% { box-shadow: 0 4px 16px rgba(167,16,236,0.15), 0 0 0 0 rgba(167,16,236,0.1); }
+  }
+
+  .placed-motivator.sector-hovered {
+    transform: scale(1.12);
+    border-color: #A710EC;
+    background: #fff;
+    z-index: 22;
+    animation: cardPulseGlow 2s ease-in-out infinite;
+  }
+
+  .placed-motivator.sector-active {
+    transform: scale(1.12);
+    border-color: #A710EC;
+    background: #fff;
+    z-index: 22;
+    animation: cardPulseGlow 2s ease-in-out infinite;
+  }
+  /* --- END WOW EFFECT --- */
+
+  .connection-lines { position: absolute; inset: 0; z-index: 5; pointer-events: none; transition: opacity 1.2s ease; }
+  .connection-lines svg { width: 100%; height: 100%; }
+
+  .fix-btn-container { padding: 20px 16px 24px 16px; border-top: 1px solid #f0e8f5; transition: all 0.3s ease; background: #fff; border-radius: 0 0 22px 22px; margin: 0 -20px; display: flex; flex-direction: column; gap: 10px; }
+  .fix-btn-container .btn { width: 100%; }
+
+  .grid-lines { position: absolute; inset: 0; z-index: 4; opacity: 0; transition: opacity 0.8s ease; pointer-events: none; }
+  .grid-lines.visible { opacity: 1; }
+  .grid-line-h { position: absolute; left: 0; right: 0; height: 2px; background: #e8dff0; }
+  .grid-line-h:nth-child(1) { top: 33.33%; }
+  .grid-line-h:nth-child(2) { top: 66.66%; }
+  .grid-line-v { position: absolute; top: 0; bottom: 0; width: 2px; background: #e8dff0; }
+  .grid-line-v:nth-child(3) { left: 33.33%; }
+  .grid-line-v:nth-child(4) { left: 66.66%; }
+
+  .sector-hover {
+    position: absolute;
+    z-index: 6;
+    cursor: pointer;
+    transition: background 0.25s ease;
+  }
+  .sector-hover.sector-bg-hovered {
+    background: rgba(167, 16, 236, 0.07);
+  }
+  .sector-hover.sector-bg-active {
+    background: rgba(167, 16, 236, 0.13);
+  }
+  .sector-label { position: absolute; text-align: center; z-index: 6; opacity: 0; transition: opacity 0.8s ease 0.3s; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .sector-label.visible { opacity: 1; }
+  .sector-label .sl-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #A710EC; color: #fff; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .sector-label .sl-text { font-size: 11px; color: #666; font-weight: 500; line-height: 1.3; max-width: 130px; }
+  .sector-tooltip { position: fixed; background: #fff; border-radius: 16px; padding: 22px; max-width: 300px; box-shadow: 0 12px 50px rgba(0,0,0,0.15); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; border-left: 4px solid #A710EC; }
+  .sector-tooltip.visible { opacity: 1; }
+  .sector-tooltip h4 { font-family: 'Roboto Slab', serif; color: #A710EC; font-size: 14px; margin-bottom: 8px; }
+  .sector-tooltip p { font-size: 13px; line-height: 1.65; color: #666; }
+
+  .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 14px 28px; border-radius: 14px; font-size: 14px; font-weight: 500; z-index: 300; opacity: 0; transition: all 0.3s ease; pointer-events: none; }
+  .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .grid-overlay { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .grid-overlay svg { width: 100%; height: 100%; }
+
+  .row-label {
+    position: absolute; z-index: 7; pointer-events: none;
+    font-size: 13px; font-weight: 500; color: #A710EC; font-family: 'Roboto Slab', serif;
+    white-space: nowrap;
+    transform: translate(-50%, -50%) rotate(-90deg) translateY(-20px);
+    opacity: 0;
+  }
+  .row-label.visible {
+    animation: slideInFromLeft 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  }
+  @keyframes slideInFromLeft {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(-90deg) translateY(-20px); }
+    100% { opacity: 1; transform: translate(-50%, -50%) rotate(-90deg) translateY(0); }
+  }
+  
+  .col-label {
+    position: absolute; z-index: 7; pointer-events: none;
+    font-size: 13px; font-weight: 500; color: #A710EC; font-family: 'Roboto Slab', serif;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  .col-label.visible {
+    animation: slideInFromBottom 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  }
+  @keyframes slideInFromBottom {
+    0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  .sector-description-content {
+    margin-top: 20px;
+    animation: descFadeIn 0.35s ease;
+  }
+  @keyframes descFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .sector-description-content p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #333;
+  }
+  .sector-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f5f0f8;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #888;
+    font-size: 16px;
+    line-height: 1;
+    z-index: 10;
+  }
+  .sector-close-btn:hover {
+    background: #e0d6ea;
+    color: #A710EC;
+  }
+  .sector-close-btn.visible {
+    display: flex;
+  }
+  .sector-prompt {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.6;
+    margin-top: 20px;
+    text-align: left;
+  }
+
+  .collision-tooltip {
+    position: fixed;
+    background: #333;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 9999;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    animation: tooltipPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes tooltipPopIn {
+    from { opacity: 0; transform: translate(-50%, -120%) scale(0.9); }
+    to { opacity: 1; transform: translate(-50%, -120%) scale(1); }
+  }
+</style>
+</head>
+<body>
+
+  <div class="global-header">
+    <h1>Мотивационный атом</h1>
+    <button class="toggle-instruction" id="toggleInstrBtn">Инструкция</button>
+  </div>
+
+  <div class="main-workspace">
+    <div class="field-area" id="tourFieldArea">
+      <div class="paper-area" id="paperArea">
+        <div class="paper-inner" id="paperInner">
+          <div class="center-circle" id="centerCircle"><span>Я</span></div>
+          <div class="connection-lines" id="connectionLines"></div>
+          <div class="grid-overlay" id="gridOverlay"></div>
+        </div>
+        <div class="grid-lines" id="gridLines">
+          <div class="grid-line-h"></div><div class="grid-line-h"></div>
+          <div class="grid-line-v"></div><div class="grid-line-v"></div>
+        </div>
+        <div id="rowLabelsContainer"></div>
+        <div id="colLabelsContainer"></div>
+        <div id="sectorsContainer"></div>
+        <div id="sectorLabels"></div>
+      </div>
+    </div>
+
+    <div class="cards-wrapper" id="tourCardsWrapper">
+      <div class="cards-panel" id="cardsPanel">
+        <button class="sector-close-btn" id="sectorCloseBtn">✕</button>
+        <h3 id="panelTitle">Что меня мотивирует?</h3>
+        <div class="sub" id="cardsSubtitle">Внеси текст, нажми enter и перетащи на поле</div>
+        <div class="stack-area" id="stackArea">
+          <div class="cards-list" id="cardsList"></div>
+        </div>
+        <div class="fix-btn-container" id="fixBtnContainer">
+          <button class="btn btn-primary" id="fixBtn" disabled>Зафиксировать</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dim-overlay" id="dimOverlay"><div class="modal-card" id="modalCard"></div></div>
+  <div class="tour-tooltip" id="tourTooltip">
+    <p id="tourTooltipText"></p>
+    <button class="tour-btn" id="tourTooltipBtn">Далее</button>
+  </div>
+  <div class="sector-tooltip" id="sectorTooltip"><h4 id="tooltipTitle"></h4><p id="tooltipText"></p></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  const TOTAL_CARDS = 30;
+  const MIN_PLACED = 8;
+  let cardTexts = new Array(TOTAL_CARDS).fill('');
+  let placedMotivators = [];
+  let isFixed = false;
+  let isDragging = false;
+  let dragGhost = null;
+  let dragSourceIndex = -1;
+  let sectorsRevealed = false;
+  let activeSectorId = null;
+  
+  let sectorBounds = {};
+  let currentHoveredSectorId = null;
+
+  const dimOverlay = document.getElementById('dimOverlay');
+  const modalCard = document.getElementById('modalCard');
+  const paperArea = document.getElementById('paperArea');
+  const paperInner = document.getElementById('paperInner');
+  const centerCircle = document.getElementById('centerCircle');
+  const cardsList = document.getElementById('cardsList');
+  const stackArea = document.getElementById('stackArea');
+  const cardsSubtitle = document.getElementById('cardsSubtitle');
+  const fixBtn = document.getElementById('fixBtn');
+  const toggleInstrBtn = document.getElementById('toggleInstrBtn');
+  const gridLines = document.getElementById('gridLines');
+  const gridOverlay = document.getElementById('gridOverlay');
+  const rowLabelsContainer = document.getElementById('rowLabelsContainer');
+  const colLabelsContainer = document.getElementById('colLabelsContainer');
+  const sectorsContainer = document.getElementById('sectorsContainer');
+  const sectorLabels = document.getElementById('sectorLabels');
+  const connectionLines = document.getElementById('connectionLines');
+  const sectorTooltip = document.getElementById('sectorTooltip');
+  const tooltipTitle = document.getElementById('tooltipTitle');
+  const tooltipText = document.getElementById('tooltipText');
+  const toastEl = document.getElementById('toast');
+  const fixBtnContainer = document.getElementById('fixBtnContainer');
+  const panelTitle = document.getElementById('panelTitle');
+  const sectorCloseBtn = document.getElementById('sectorCloseBtn');
+
+  const tourFieldArea = document.getElementById('tourFieldArea');
+  const tourCardsWrapper = document.getElementById('tourCardsWrapper');
+  const tourTooltip = document.getElementById('tourTooltip');
+  const tourTooltipText = document.getElementById('tourTooltipText');
+  const tourTooltipBtn = document.getElementById('tourTooltipBtn');
+
+  const sectorsData = [
+    { row: 0, col: 0, id: 1, title: 'Осознанно не мотивирует', text: 'Это мотиваторы, значимость которых ты преувеличиваешь. Часто тут оказываются какие-то стереотипные или надуманные вещи. Им стоит уделять меньше всего времени и усилий.' },
+    { row: 0, col: 1, id: 2, title: 'Зона оперативной мотивации', text: 'Здесь находятся мотиваторы, которые важны для тебя здесь и сейчас. Если здесь пусто, значит в данный момент тебе больше важна не рабочая деятельность (ведь сейчас мы исследовали мотиваторы именно на работу), а другие сферы жизни.' },
+    { row: 0, col: 2, id: 3, title: 'Зона стратегической мотивации', text: 'Эта зона имеет двойную трактовку: здесь находятся мотиваторы, которые для тебя важны и нужны всегда — в любой работе, в любой компании. Это то, чего еще нет, но к чему вы обязательно придёте. Это то что имеет наибольшее значение в долгосрочной стратегии. Зона может быть пустой, если ты ещё не сформировал свою стратегию и видение что важно в работе из-за отсутствия, например, опыта.' },
+    { row: 1, col: 0, id: 4, title: 'Зона достигнутой мотивации', text: 'Эти мотиваторы воспринимаются тобой как уже достигнутые. По большому счету здесь все устраивает тебя.' },
+    { row: 1, col: 2, id: 6, title: 'Зона контролируемого будущего', text: 'Если в твоей рабочей деятельности есть мотиваторы, которые попали в эту зону — это классно, но если их нет (или не станет), то специально стремиться к их достижению ты не будешь. Это то, чего хочется, но специально ничего делать сам не станешь.' },
+    { row: 2, col: 0, id: 7, title: 'Зона бессознательно ушедшей мотивации', text: 'Мотиваторы, которые здесь находятся были для тебя важны не так давно. Потребность в них уже ушла, и не мотивирует, но ты еще не осознаешь этого. Подумай, действительно ли актуальны эти мотиваторы на текущий момент?' },
+    { row: 2, col: 1, id: 8, title: 'Зона базовой мотивации', text: 'Это то на чем стоишь, основная мотивация, фундамент. Здесь находятся мотиваторы, отсутствие которых в твоей рабочей деятельности может привести к сильной демотивации и увольнению.' },
+    { row: 2, col: 2, id: 9, title: 'Зона ресурсной мотивации', text: 'Здесь находится то, что заряжает и вдохновляет тебя. Это твой источник энергии и эмоциональный допинг.' }
+  ];
+
+  const rowNames = ['Рациональное', 'Сфера контроля', 'Эмоциональное'];
+  const colNames = ['Прошлое', 'Настоящее', 'Будущее'];
+
+  const INTERPRETATION_TITLE = 'Как интерпретировать результат';
+  const INTERPRETATION_TEXT = 'Итак, мы разложили твой мотивационный атом на 9 секторов. Это сетка 3×3, которая помогает увидеть не только что тебя мотивирует, но и как именно это работает.<br><br>Три строки сверху вниз подсвечивают, какая сфера оказывается сильнее: рациональное, контроль и эмоциональное.<br><br>Три столбца слева направо показывают, что опирается на прошлый опыт, что важно прямо сейчас и что связано с будущими ожиданиями и целями.<br><br>Теперь просто наведи курсор на любой сектор — так ты увидишь, что он означает, и поймёшь, что может значить, если твои мотиваторы оказались именно там.';
+
+  function escHtml(string) { return String(string).replace(/[&<>"']/g, s => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[s])); }
+  function showToast(msg) { toastEl.textContent = msg; toastEl.classList.add('visible'); setTimeout(() => toastEl.classList.remove('visible'), 3000); }
+
+  function showCircleTooltip(screenX, screenY) {
+    var existing = document.querySelector('.collision-tooltip');
+    if (existing) existing.remove();
+
+    var tooltip = document.createElement('div');
+    tooltip.className = 'collision-tooltip';
+    tooltip.textContent = 'Не размещай карточки на центральном круге';
+    tooltip.style.left = screenX + 'px';
+    tooltip.style.top = screenY + 'px';
+    
+    document.body.appendChild(tooltip);
+
+    setTimeout(() => {
+      tooltip.style.opacity = '0';
+      tooltip.style.transition = 'opacity 0.3s';
+      setTimeout(() => tooltip.remove(), 300);
+    }, 2500);
+  }
+
+  function resizeCenterCircle() {
+    var pw = paperInner.offsetWidth;
+    var ph = paperInner.offsetHeight;
+    var diameter = Math.min(pw / 3, ph / 3);
+    
+    centerCircle.style.width = diameter + 'px';
+    centerCircle.style.height = diameter + 'px';
+    
+    var fontSize = Math.max(24, diameter * 0.4);
+    centerCircle.querySelector('span').style.fontSize = fontSize + 'px';
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    showWelcomeStep();
+    resizeCenterCircle();
+    window.addEventListener('resize', resizeCenterCircle);
+  });
+
+  function showWelcomeStep() {
+    modalCard.innerHTML = `<div class="icon-top">✨</div><h2 class="modal-title">Мотивационный атом</h2><div class="modal-body"><p>Привет! Давай на несколько минут переключимся на тебя и твою мотивацию.</p><p>Упражнение поможет посмотреть, что для тебя важно в рабочей деятельности и что даёт энергию.</p><p>Сейчас твоя задача — выписать все свои мотиваторы: всё, что драйвит, заряжает, поддерживает интерес. Пиши как есть, не фильтруя и не оценивая. Здесь нет правильных или неправильных ответов. <strong>Цель — не проверить, а поисследовать твою рабочую мотивацию и лучше понять её.</strong></p></div><button class="btn btn-primary" id="welcomeStartBtn" style="margin-top: 44px; width: auto; padding: 12px 44px; display: block; margin-left: auto; margin-right: auto;">Приступить</button>`;
+    document.getElementById('welcomeStartBtn').addEventListener('click', showReadyStep);
+  }
+
+  function showReadyStep() {
+    modalCard.innerHTML = `<div class="icon-top"></div><p style="text-align:center; margin-bottom: 24px; font-size: 18px; line-height: 1.5; color: #333;">Отлично! Давай посмотрим, что нужно делать</p><button class="btn btn-primary" id="tourStartBtn" style="margin-top: 16px; width: auto; padding: 12px 44px; display: block; margin-left: auto; margin-right: auto;">Вперёд</button>`;
+    document.getElementById('tourStartBtn').addEventListener('click', startInterfaceTour);
+  }
+
+  function startInterfaceTour() {
+    modalCard.style.display = 'none';
+    tourFieldArea.classList.add('highlight-tour');
+    let fieldRect = tourFieldArea.getBoundingClientRect();
+    tourTooltip.style.top = (fieldRect.top + 60) + 'px';
+    tourTooltip.style.left = (fieldRect.right + 20) + 'px';
+    tourTooltipText.innerHTML = '<strong>Главное поле</strong><br>Здесь ты будешь создавать свой мотивационный атом.';
+    tourTooltipBtn.innerHTML = 'Далее ➔';
+    tourTooltip.style.display = 'block';
+
+    let currentStep = 1;
+    tourTooltipBtn.onclick = function() {
+      if (currentStep === 1) {
+        tourFieldArea.classList.remove('highlight-tour');
+        tourCardsWrapper.classList.add('highlight-tour');
+        let cardsRect = tourCardsWrapper.getBoundingClientRect();
+        tourTooltip.style.top = (cardsRect.top + 40) + 'px';
+        tourTooltip.style.left = (cardsRect.left - 350) + 'px'; 
+        tourTooltipText.innerHTML = 'Запиши мотиваторы на карточках справа и равномерно распредели их по полю. Внеси не менее 8 штук.';
+        currentStep = 2;
+      } else if (currentStep === 2) {
+        tourCardsWrapper.classList.remove('highlight-tour');
+        fixBtnContainer.classList.add('highlight-tour-extended');
+        let btnRect = fixBtnContainer.getBoundingClientRect();
+        tourTooltip.style.top = (btnRect.top - 140) + 'px'; 
+        tourTooltip.style.left = (btnRect.left - 350) + 'px';
+        tourTooltipText.innerHTML = 'Когда ты выгрузишь все свои мысли (минимум 8 мотиваторов), кнопка <strong>«Зафиксировать»</strong> станет активной. Жми её, чтобы продолжить.';
+        tourTooltipBtn.innerHTML = 'Поехали!';
+        currentStep = 3;
+      } else if (currentStep === 3) {
+        fixBtnContainer.classList.remove('highlight-tour-extended');
+        tourTooltip.style.display = 'none';
+        dimOverlay.classList.add('hidden'); 
+        toggleInstrBtn.classList.add('visible'); 
+        initCards(); 
+      }
+    };
+  }
+
+  toggleInstrBtn.addEventListener('click', function() {
+    toggleInstrBtn.classList.remove('visible');
+    modalCard.style.display = 'block'; 
+    modalCard.innerHTML = `<div class="icon-top"></div><h2 style="margin-bottom: 20px; text-align: center;">Как это работает</h2><div style="text-align: left; color: #333; font-size: 14px; line-height: 1.6;"><p style="margin-bottom: 12px;">Запиши свои мотиваторы на карточках справа и равномерно распредели их по полю вокруг «Я». Чтобы перенести карточку, нажми enter после ввода текста и зажми мышкой. Заполни не менее 8 карточек.</p></div><button class="btn btn-primary" id="modalInstructionCloseBtn" style="width: auto; padding: 12px 44px; display: block; margin: 40px auto 0;">Понятно</button>`;
+    dimOverlay.classList.remove('hidden');
+    document.getElementById('modalInstructionCloseBtn').addEventListener('click', () => { dimOverlay.classList.add('hidden'); toggleInstrBtn.classList.add('visible'); });
+  });
+
+  function initCards() {
+    cardsList.innerHTML = '';
+    for (var i = 0; i < TOTAL_CARDS; i++) createCard(i);
+    updateStackPositions();
+    focusTopInput();
+  }
+
+  function createCard(index) {
+    var item = document.createElement('div');
+    item.className = 'card-item is-empty';
+    item.dataset.index = index;
+    item.innerHTML = '<input class="edit-input" placeholder="Напиши мотиватор..." maxlength="50" />';
+    item.querySelector('.edit-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); var val = this.value.trim(); if (val) fillCard(index, val); }
+    });
+    cardsList.appendChild(item);
+  }
+
+  function fillCard(index, text) {
+    cardTexts[index] = text;
+    var item = cardsList.querySelector('[data-index="' + index + '"]');
+    if (!item) return;
+    item.className = 'card-item is-filled';
+    item.innerHTML = '<div class="card-text">' + escHtml(text) + '</div><div class="card-num">#' + (index + 1) + '</div>';
+    updateStackPositions();
+    setTimeout(() => {
+      var nextEmpty = cardTexts.findIndex((t, idx) => !t && idx > index);
+      if (nextEmpty === -1) nextEmpty = cardTexts.findIndex(t => !t);
+      if (nextEmpty !== -1) cardsList.querySelector('[data-index="' + nextEmpty + '"] .edit-input')?.focus();
+    }, 100);
+  }
+
+  function updateStackPositions() {
+    var items = Array.from(cardsList.querySelectorAll('.card-item'));
+    var filled = items.filter(item => item.classList.contains('is-filled'));
+    var empty = items.filter(item => item.classList.contains('is-empty'));
+    filled.forEach((item, idx) => item.className = 'card-item is-filled ' + (idx === 0 ? 'pos-0' : 'pos-hidden'));
+    var emptyStartIdx = filled.length > 0 ? 1 : 0;
+    empty.forEach((item, idx) => { var pos = emptyStartIdx + idx; item.className = 'card-item is-empty ' + (pos <= 3 ? 'pos-' + pos : 'pos-hidden'); });
+  }
+
+  function focusTopInput() { var input = cardsList.querySelector('.card-item.is-empty .edit-input'); if (input) setTimeout(() => input.focus(), 50); }
+
+  function updatePlacedCount() { 
+    fixBtn.disabled = placedMotivators.length < MIN_PLACED;
+  }
+
+  cardsList.addEventListener('mousedown', function(e) {
+    if (isFixed) return;
+    var cardEl = e.target.closest('.card-item.is-filled.pos-0');
+    if (!cardEl) return;
+    e.preventDefault();
+    isDragging = true; dragSourceIndex = parseInt(cardEl.dataset.index);
+    dragGhost = document.createElement('div'); dragGhost.className = 'drag-ghost'; dragGhost.textContent = cardTexts[dragSourceIndex];
+    document.body.appendChild(dragGhost); moveGhost(e.clientX, e.clientY);
+    cardEl.classList.add('animating-out');
+    document.addEventListener('mousemove', onDragMove); document.addEventListener('mouseup', onDragEnd);
+  });
+
+  function onDragMove(e) { if (isDragging) moveGhost(e.clientX, e.clientY); }
+  function moveGhost(x, y) { if (dragGhost) { dragGhost.style.left = (x - 60) + 'px'; dragGhost.style.top = (y - 20) + 'px'; } }
+
+  function onDragEnd(e) {
+    document.removeEventListener('mousemove', onDragMove); document.removeEventListener('mouseup', onDragEnd);
+    isDragging = false; if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+    var paperRect = paperInner.getBoundingClientRect();
+    var droppedOnField = (e.clientX >= paperRect.left && e.clientX <= paperRect.right && e.clientY >= paperRect.top && e.clientY <= paperRect.bottom);
+    if (droppedOnField && dragSourceIndex !== -1) {
+      placeOnField(dragSourceIndex, e.clientX, e.clientY); cardTexts[dragSourceIndex] = '';
+      var cardEl = cardsList.querySelector('[data-index="' + dragSourceIndex + '"]'); if (cardEl) cardEl.remove();
+      updateStackPositions(); focusTopInput();
+    } else if (dragSourceIndex !== -1) {
+      cardsList.querySelector('[data-index="' + dragSourceIndex + '"]')?.classList.remove('animating-out');
+    }
+    dragSourceIndex = -1;
+  }
+
+  function placeOnField(cardIndex, clientX, clientY) {
+    var text = cardTexts[cardIndex]; if (!text) return;
+    var paperRect = paperInner.getBoundingClientRect();
+    
+    var cardW = 120;
+    var cardH = 40;
+    
+    var x = Math.max(0, Math.min(paperRect.width - cardW, clientX - paperRect.left - cardW / 2));
+    var y = Math.max(0, Math.min(paperRect.height - cardH, clientY - paperRect.top - cardH / 2));
+
+    var circleRect = centerCircle.getBoundingClientRect();
+    var circleRelX = (circleRect.left - paperRect.left) + (circleRect.width / 2);
+    var circleRelY = (circleRect.top - paperRect.top) + (circleRect.height / 2);
+    var circleR = circleRect.width / 2;
+
+    var cardLeft = x;
+    var cardRight = x + cardW;
+    var cardTop = y;
+    var cardBottom = y + cardH;
+    
+    var closestX = Math.max(cardLeft, Math.min(circleRelX, cardRight));
+    var closestY = Math.max(cardTop, Math.min(circleRelY, cardBottom));
+    
+    var dist = Math.sqrt(Math.pow(closestX - circleRelX, 2) + Math.pow(closestY - circleRelY, 2));
+
+    if (dist < circleR) {
+      var cardCenterX = x + cardW / 2;
+      var cardCenterY = y + cardH / 2;
+      var angle = Math.atan2(cardCenterY - circleRelY, cardCenterX - circleRelX);
+      
+      var halfDiag = Math.sqrt(Math.pow(cardW / 2, 2) + Math.pow(cardH / 2, 2));
+      var safeDist = circleR + halfDiag + 15;
+      
+      var newCenterX = circleRelX + Math.cos(angle) * safeDist;
+      var newCenterY = circleRelY + Math.sin(angle) * safeDist;
+      
+      x = Math.max(0, Math.min(paperRect.width - cardW, newCenterX - cardW / 2));
+      y = Math.max(0, Math.min(paperRect.height - cardH, newCenterY - cardH / 2));
+
+      showCircleTooltip(circleRelX + paperRect.left, circleRelY + paperRect.top);
+    }
+
+    var motivator = document.createElement('div'); motivator.className = 'placed-motivator'; motivator.textContent = text;
+    motivator.style.left = x + 'px'; motivator.style.top = y + 'px';
+    paperInner.appendChild(motivator); placedMotivators.push({ text: text, element: motivator }); 
+    makePlacedDraggable(motivator);
+    setupMotivatorHover(motivator);
+    updatePlacedCount();
+    
+    if (isFixed) {
+      drawConnections();
+    }
+  }
+
+  function setupMotivatorHover(el) {
+    el.addEventListener('mouseenter', function() {
+      if (activeSectorId) return;
+      var secId = getMotivatorSectorId(el);
+      if (!secId) return;
+      currentHoveredSectorId = secId;
+      clearAllCardHighlights();
+      clearAllSectorHighlights();
+      highlightSectorBg(secId, 'sector-bg-hovered');
+      var cards = getCardsInSector(secId);
+      cards.forEach(function(m) {
+        m.element.classList.add('sector-hovered');
+      });
+      showSectorDescription(secId);
+    });
+    
+    el.addEventListener('mouseleave', function() {
+      if (activeSectorId) return;
+      clearAllCardHighlights();
+      clearAllSectorHighlights();
+      currentHoveredSectorId = null;
+      restoreInterpretationText();
+    });
+  }
+
+  function restoreInterpretationText() {
+    var descContent = document.getElementById('sectorDescContent');
+    if (descContent) descContent.remove();
+    
+    var promptEl = document.getElementById('rightPanelText');
+    if (promptEl && sectorsRevealed) {
+      promptEl.innerHTML = INTERPRETATION_TEXT;
+      promptEl.className = 'sector-prompt';
+      promptEl.style.display = '';
+    }
+    if (sectorsRevealed) {
+      panelTitle.textContent = INTERPRETATION_TITLE;
+      panelTitle.classList.remove('sector-title');
+    }
+  }
+
+  function makePlacedDraggable(el) {
+    var offsetLeft = 0, offsetTop = 0;
+    var isMoving = false;
+    
+    el.addEventListener('mousedown', function(e) {
+      if (isFixed) return;
+      e.preventDefault();
+      isMoving = true;
+      offsetLeft = e.clientX - el.offsetLeft;
+      offsetTop = e.clientY - el.offsetTop;
+      el.style.zIndex = '25';
+      
+      document.addEventListener('mousemove', movePlaced);
+      document.addEventListener('mouseup', stopPlaced);
+    });
+    
+    function movePlaced(e) {
+      if (!isMoving) return;
+      var pw = paperInner.offsetWidth;
+      var ph = paperInner.offsetHeight;
+      var ew = el.offsetWidth;
+      var eh = el.offsetHeight;
+      var newX = Math.max(0, Math.min(pw - ew, e.clientX - offsetLeft));
+      var newY = Math.max(0, Math.min(ph - eh, e.clientY - offsetTop));
+      el.style.left = newX + 'px';
+      el.style.top = newY + 'px';
+    }
+    
+    function stopPlaced() {
+      if (!isMoving) return;
+      isMoving = false;
+      el.style.zIndex = '20';
+      document.removeEventListener('mousemove', movePlaced);
+      document.removeEventListener('mouseup', stopPlaced);
+      if (isFixed) drawConnections();
+    }
+  }
+
+  fixBtn.addEventListener('click', function() {
+    if (!isFixed) {
+      if (placedMotivators.length < MIN_PLACED) { 
+          showToast('Нужно минимум ' + MIN_PLACED + ' шт. (Сейчас: ' + placedMotivators.length + ')'); 
+          return; 
+      }
+      isFixed = true;
+      fixBtn.textContent = 'К результату';
+      cardsSubtitle.style.display = 'none';
+      cardsList.style.display = 'none';
+      
+      var msgDiv = document.createElement('div');
+      msgDiv.id = 'rightPanelText';
+      msgDiv.className = 'sector-prompt';
+      msgDiv.innerHTML = 'Это твоя личная формула рабочей энергии: всё, что тебя включает, поддерживает интерес и помогает двигаться вперёд. Каждый мотиватор здесь — как частица, а вместе они создают устойчивую основу твоей мотивации.<br><br>Жми «К результату», чтобы узнать как интерпретировать этот атом.';
+      stackArea.appendChild(msgDiv);
+      
+      panelTitle.textContent = 'Готово! Ты собрал свой «мотивационный атом»';
+      
+      toggleInstrBtn.style.opacity = '0';
+      toggleInstrBtn.style.pointerEvents = 'none';
+      
+      drawConnections(); 
+      
+      placedMotivators.forEach(function(m) { 
+        m.element.classList.add('locked'); 
+        setupMotivatorHover(m.element);
+      });
+      showToast('Твой Мотивационный атом построен!');
+    } else {
+      if (!sectorsRevealed) {
+        sectorsRevealed = true;
+        resizeCenterCircle();
+        animateSectors();
+        createResultButtons();
+        
+        panelTitle.textContent = INTERPRETATION_TITLE;
+        panelTitle.classList.remove('sector-title');
+        
+        var msgDiv = document.getElementById('rightPanelText');
+        if (msgDiv) {
+          msgDiv.innerHTML = INTERPRETATION_TEXT;
+        }
+        
+      } else {
+        showToast('Переход к результатам...');
+      }
+    }
+  });
+
+  function createResultButtons() {
+    fixBtn.style.display = 'none';
+    
+    var btnPDF = document.createElement('button');
+    btnPDF.className = 'btn btn-primary';
+    btnPDF.id = 'btnPdf';
+    btnPDF.innerHTML = 'Скачать PDF';
+    btnPDF.onclick = generatePDF;
+    
+    var btnReset = document.createElement('button');
+    btnReset.className = 'btn btn-secondary';
+    btnReset.innerHTML = 'Начать заново';
+    btnReset.onclick = resetToCardsState;
+    
+    fixBtnContainer.appendChild(btnPDF);
+    fixBtnContainer.appendChild(btnReset);
+  }
+
+  function resetToCardsState() {
+    cardTexts = new Array(TOTAL_CARDS).fill('');
+    placedMotivators = [];
+    isFixed = false;
+    isDragging = false;
+    dragGhost = null;
+    dragSourceIndex = -1;
+    sectorsRevealed = false;
+    activeSectorId = null;
+    currentHoveredSectorId = null;
+    sectorBounds = {};
+
+    Array.from(paperInner.querySelectorAll('.placed-motivator')).forEach(el => el.remove());
+    Array.from(paperInner.querySelectorAll('.sector-hover')).forEach(el => el.remove());
+    connectionLines.innerHTML = '';
+    connectionLines.style.opacity = '1';
+    gridOverlay.innerHTML = '';
+    rowLabelsContainer.innerHTML = '';
+    colLabelsContainer.innerHTML = '';
+    sectorsContainer.innerHTML = '';
+    sectorLabels.innerHTML = '';
+    gridLines.classList.remove('visible');
+
+    var fixedMsg = document.getElementById('rightPanelText');
+    if (fixedMsg) fixedMsg.remove();
+    var descContent = document.getElementById('sectorDescContent');
+    if (descContent) descContent.remove();
+    
+    panelTitle.textContent = 'Карточки мотиваторов';
+    panelTitle.classList.remove('sector-title');
+    sectorCloseBtn.classList.remove('visible');
+    
+    cardsList.style.display = 'block';
+    cardsList.innerHTML = '';
+    stackArea.style.display = 'block';
+
+    var btnPdf = document.getElementById('btnPdf');
+    if (btnPdf) btnPdf.remove();
+    var btnReset = fixBtnContainer.querySelector('.btn-secondary');
+    if (btnReset) btnReset.remove();
+    
+    fixBtn.style.display = 'flex';
+    fixBtn.textContent = 'Зафиксировать';
+    fixBtn.disabled = true;
+    fixBtn.className = 'btn btn-primary';
+
+    dimOverlay.classList.add('hidden');
+    modalCard.style.display = 'none';
+    tourTooltip.style.display = 'none';
+    sectorTooltip.classList.remove('visible');
+    toggleInstrBtn.classList.add('visible');
+    toggleInstrBtn.style.opacity = '';
+    toggleInstrBtn.style.pointerEvents = '';
+
+    resizeCenterCircle();
+    centerCircle.classList.remove('faded');
+    initCards();
+  }
+
+  function generatePDF() {
+    var btnContainer = document.getElementById('fixBtnContainer');
+    btnContainer.style.display = 'none';
+    
+    showToast('Генерация PDF...');
+    
+    html2canvas(document.getElementById('paperArea'), { 
+      scale: 2,
+      backgroundColor: '#faf8fd'
+    }).then(canvas => {
+      const { jsPDF } = window.jspdf;
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdfWidth = 210;
+      const pdfHeight = 148;
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const w = imgWidth * ratio;
+      const h = imgHeight * ratio;
+      
+      const x = (pdfWidth - w) / 2;
+      const y = (pdfHeight - h) / 2;
+      
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      doc.addImage(imgData, 'PNG', x, y, w, h);
+      doc.save('motivational_atom.pdf');
+      
+      btnContainer.style.display = 'flex';
+    }).catch(err => {
+      console.error('PDF generation failed:', err);
+      btnContainer.style.display = 'flex';
+      showToast('Ошибка создания PDF');
+    });
+  }
+
+  function getMotivatorSectorId(motivatorEl) {
+    if (!sectorBounds.hLine1Y || !sectorBounds.hLine2Y || !sectorBounds.vLine1X || !sectorBounds.vLine2X) return null;
+    
+    var rect = motivatorEl.getBoundingClientRect();
+    var piRect = paperInner.getBoundingClientRect();
+    
+    var cardCx = rect.left + rect.width / 2 - piRect.left;
+    var cardCy = rect.top + rect.height / 2 - piRect.top;
+    
+    var h1 = sectorBounds.hLine1Y;
+    var h2 = sectorBounds.hLine2Y;
+    var v1 = sectorBounds.vLine1X;
+    var v2 = sectorBounds.vLine2X;
+    
+    var row = -1;
+    if (cardCy < h1) row = 0;
+    else if (cardCy < h2) row = 1;
+    else row = 2;
+    
+    var col = -1;
+    if (cardCx < v1) col = 0;
+    else if (cardCx < v2) col = 1;
+    else col = 2;
+    
+    var sectorMap = {
+      '0,0': 1, '0,1': 2, '0,2': 3,
+      '1,0': 4, '1,1': null, '1,2': 6,
+      '2,0': 7, '2,1': 8, '2,2': 9
+    };
+    
+    return sectorMap[row + ',' + col] || null;
+  }
+
+  function getCardsInSector(sectorId) {
+    return placedMotivators.filter(function(m) {
+      return getMotivatorSectorId(m.element) === sectorId;
+    });
+  }
+
+  function clearAllCardHighlights() {
+    placedMotivators.forEach(function(m) {
+      m.element.classList.remove('sector-hovered', 'sector-active');
+    });
+  }
+
+  function clearAllSectorHighlights() {
+    var allSectors = document.querySelectorAll('.sector-hover');
+    allSectors.forEach(function(s) { s.classList.remove('sector-bg-hovered', 'sector-bg-active'); });
+  }
+
+  function highlightSectorBg(sectorId, className) {
+    var sectorEl = document.querySelector('.sector-hover[data-sector-id="' + sectorId + '"]');
+    if (sectorEl) sectorEl.classList.add(className);
+  }
+
+  function animateSectors() {
+    connectionLines.style.opacity = '0';
+    centerCircle.classList.add('faded');
+    
+    var pw = paperInner.offsetWidth;
+    var ph = paperInner.offsetHeight;
+    var paRect = paperArea.getBoundingClientRect();
+    var piRect = paperInner.getBoundingClientRect();
+    
+    var offsetX = piRect.left - paRect.left;
+    var offsetY = piRect.top - paRect.top;
+    
+    var circleDiameter = Math.min(pw / 3, ph / 3);
+    var radius = circleDiameter / 2;
+    var cx = pw / 2;
+    var cy = ph / 2;
+    
+    var hLine1Y = cy - radius;
+    var hLine2Y = cy + radius;
+    var vLine1X = cx - radius;
+    var vLine2X = cx + radius;
+    
+    sectorBounds = {
+      hLine1Y: hLine1Y,
+      hLine2Y: hLine2Y,
+      vLine1X: vLine1X,
+      vLine2X: vLine2X
+    };
+    
+    gridOverlay.innerHTML = '';
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', pw);
+    svg.setAttribute('height', ph);
+    svg.setAttribute('viewBox', '0 0 ' + pw + ' ' + ph);
+    gridOverlay.appendChild(svg);
+    
+    var hLine1 = createAnimatedLine(0, hLine1Y, pw, hLine1Y);
+    var hLine2 = createAnimatedLine(0, hLine2Y, pw, hLine2Y);
+    svg.appendChild(hLine1);
+    svg.appendChild(hLine2);
+    
+    rowLabelsContainer.innerHTML = '';
+    var topRowCenter = hLine1Y / 2;
+    var midRowCenter = cy;
+    var bottomRowCenter = (hLine2Y + ph) / 2;
+    
+    for (var r = 0; r < 3; r++) {
+      var label = document.createElement('div');
+      label.className = 'row-label';
+      label.textContent = rowNames[r];
+      var centerY = offsetY + [topRowCenter, midRowCenter, bottomRowCenter][r];
+      label.style.left = '15px';
+      label.style.top = centerY + 'px';
+      rowLabelsContainer.appendChild(label);
+    }
+    
+    colLabelsContainer.innerHTML = '';
+    var leftColCenter = vLine1X / 2;
+    var midColCenter = cx;
+    var rightColCenter = (vLine2X + pw) / 2;
+    
+    var colLabelsY = ph + 25;
+    
+    for (var c = 0; c < 3; c++) {
+      var colLabel = document.createElement('div');
+      colLabel.className = 'col-label';
+      colLabel.textContent = colNames[c];
+      var centerX = offsetX + [leftColCenter, midColCenter, rightColCenter][c];
+      colLabel.style.left = centerX + 'px';
+      colLabel.style.top = colLabelsY + 'px';
+      colLabelsContainer.appendChild(colLabel);
+    }
+    
+    animateLineDraw(hLine1, 1200, function() {
+      animateLineDraw(hLine2, 1200, function() {
+        setTimeout(function() { rowLabelsContainer.children[0].classList.add('visible'); }, 400);
+        setTimeout(function() { rowLabelsContainer.children[1].classList.add('visible'); }, 1000);
+        setTimeout(function() { rowLabelsContainer.children[2].classList.add('visible'); }, 1600);
+        
+        setTimeout(function() {
+          var vLine1 = createAnimatedLine(vLine1X, 0, vLine1X, ph);
+          var vLine2 = createAnimatedLine(vLine2X, 0, vLine2X, ph);
+          svg.appendChild(vLine1);
+          svg.appendChild(vLine2);
+          
+          animateLineDraw(vLine1, 1200, function() {
+            animateLineDraw(vLine2, 1200, function() {
+              setTimeout(function() { colLabelsContainer.children[0].classList.add('visible'); }, 400);
+              setTimeout(function() { colLabelsContainer.children[1].classList.add('visible'); }, 1000);
+              setTimeout(function() { colLabelsContainer.children[2].classList.add('visible'); }, 1600);
+              
+              setTimeout(function() {
+                showToast('Атом разделён на зоны');
+                createInteractiveSectors();
+              }, 1800);
+            });
+          });
+        }, 2200);
+      });
+    });
+  }
+
+  function createInteractiveSectors() {
+    var pw = paperInner.offsetWidth;
+    var ph = paperInner.offsetHeight;
+    
+    var hLine1Y = sectorBounds.hLine1Y;
+    var hLine2Y = sectorBounds.hLine2Y;
+    var vLine1X = sectorBounds.vLine1X;
+    var vLine2X = sectorBounds.vLine2X;
+    
+    var col1Width = vLine1X;
+    var col2Width = vLine2X - vLine1X;
+    var col3Width = pw - vLine2X;
+    
+    var row1Height = hLine1Y;
+    var row2Height = hLine2Y - hLine1Y;
+    var row3Height = ph - hLine2Y;
+    
+    var sectorPositions = [
+      { id: 1, x: 0,            y: 0,          w: col1Width, h: row1Height },
+      { id: 2, x: vLine1X,      y: 0,          w: col2Width, h: row1Height },
+      { id: 3, x: vLine2X,      y: 0,          w: col3Width, h: row1Height },
+      { id: 4, x: 0,            y: hLine1Y,    w: col1Width, h: row2Height },
+      { id: 6, x: vLine2X,      y: hLine1Y,    w: col3Width, h: row2Height },
+      { id: 7, x: 0,            y: hLine2Y,    w: col1Width, h: row3Height },
+      { id: 8, x: vLine1X,      y: hLine2Y,    w: col2Width, h: row3Height },
+      { id: 9, x: vLine2X,      y: hLine2Y,    w: col3Width, h: row3Height }
+    ];
+    
+    sectorPositions.forEach(function(sp) {
+      var sectorEl = document.createElement('div');
+      sectorEl.className = 'sector-hover';
+      sectorEl.dataset.sectorId = sp.id;
+      sectorEl.style.left = sp.x + 'px';
+      sectorEl.style.top = sp.y + 'px';
+      sectorEl.style.width = sp.w + 'px';
+      sectorEl.style.height = sp.h + 'px';
+      
+      sectorEl.addEventListener('mouseenter', function() {
+        var secId = parseInt(this.dataset.sectorId);
+        currentHoveredSectorId = secId;
+        clearAllCardHighlights();
+        clearAllSectorHighlights();
+        
+        highlightSectorBg(secId, 'sector-bg-hovered');
+        
+        var cards = getCardsInSector(secId);
+        cards.forEach(function(m) {
+          m.element.classList.add('sector-hovered');
+        });
+        
+        showSectorDescription(secId);
+      });
+      
+      sectorEl.addEventListener('mouseleave', function() {
+        if (activeSectorId !== currentHoveredSectorId) {
+          clearAllCardHighlights();
+          clearAllSectorHighlights();
+          restoreInterpretationText();
+        }
+        currentHoveredSectorId = null;
+        
+        if (activeSectorId) {
+          highlightSectorBg(activeSectorId, 'sector-bg-active');
+          var activeCards = getCardsInSector(activeSectorId);
+          activeCards.forEach(function(m) {
+            m.element.classList.add('sector-active');
+          });
+        }
+      });
+      
+      sectorEl.addEventListener('click', function() {
+        var secId = parseInt(this.dataset.sectorId);
+        
+        clearAllCardHighlights();
+        clearAllSectorHighlights();
+        
+        if (activeSectorId === secId) {
+          activeSectorId = null;
+          restoreInterpretationText();
+        } else {
+          activeSectorId = secId;
+          currentHoveredSectorId = secId;
+          highlightSectorBg(secId, 'sector-bg-active');
+          
+          var cards = getCardsInSector(secId);
+          cards.forEach(function(m) {
+            m.element.classList.add('sector-active');
+          });
+          showSectorDescription(secId);
+        }
+      });
+      
+      paperInner.appendChild(sectorEl);
+    });
+  }
+
+  function showSectorDescription(sectorId) {
+    var sectorInfo = sectorsData.find(function(s) { return s.id === sectorId; });
+    if (!sectorInfo) return;
+    
+    var existingContent = document.getElementById('sectorDescContent');
+    if (existingContent) existingContent.remove();
+    
+    var promptEl = document.getElementById('rightPanelText');
+    if (promptEl) promptEl.style.display = 'none';
+    
+    panelTitle.textContent = sectorInfo.title;
+    panelTitle.classList.add('sector-title');
+    
+    if (activeSectorId === sectorId) {
+      sectorCloseBtn.classList.add('visible');
+    } else {
+      sectorCloseBtn.classList.remove('visible');
+    }
+    
+    var descDiv = document.createElement('div');
+    descDiv.className = 'sector-description-content';
+    descDiv.id = 'sectorDescContent';
+    descDiv.innerHTML = '<p>' + sectorInfo.text + '</p>';
+    
+    stackArea.appendChild(descDiv);
+  }
+
+  function closeSectorDescription() {
+    activeSectorId = null;
+    currentHoveredSectorId = null;
+    clearAllCardHighlights();
+    clearAllSectorHighlights();
+    
+    var descContent = document.getElementById('sectorDescContent');
+    if (descContent) descContent.remove();
+    
+    restoreInterpretationText();
+    sectorCloseBtn.classList.remove('visible');
+  }
+
+  sectorCloseBtn.addEventListener('click', function() {
+    closeSectorDescription();
+  });
+
+  function createAnimatedLine(x1, y1, x2, y2) {
+    var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+    line.setAttribute('stroke', '#e0d6ea');
+    line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('stroke-dasharray', '8 4');
+    line.setAttribute('opacity', '1');
+    return line;
+  }
+
+  function animateLineDraw(lineElement, duration, callback) {
+    duration = duration || 1500;
+    var length = Math.sqrt(
+      Math.pow(parseFloat(lineElement.getAttribute('x2')) - parseFloat(lineElement.getAttribute('x1')), 2) +
+      Math.pow(parseFloat(lineElement.getAttribute('y2')) - parseFloat(lineElement.getAttribute('y1')), 2)
+    );
+    
+    lineElement.setAttribute('stroke-dasharray', length);
+    lineElement.setAttribute('stroke-dashoffset', length);
+    
+    var start = null;
+    function step(timestamp) {
+      if (!start) start = timestamp;
+      var progress = (timestamp - start) / duration;
+      if (progress > 1) progress = 1;
+      
+      var eased = easeInOut(progress);
+      lineElement.setAttribute('stroke-dashoffset', length * (1 - eased));
+      
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        lineElement.setAttribute('stroke-dasharray', '8 4');
+        if (callback) callback();
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function easeInOut(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  function drawConnections() {
+    connectionLines.innerHTML = '';
+    connectionLines.style.opacity = '1';
+    var w = paperInner.offsetWidth;
+    var h = paperInner.offsetHeight;
+    var cx = w / 2;
+    var cy = h / 2;
+    
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    
+    placedMotivators.forEach(function(m) {
+      var mx = m.element.offsetLeft + (m.element.offsetWidth / 2);
+      var my = m.element.offsetTop + (m.element.offsetHeight / 2);
+      
+      var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', cx);
+      line.setAttribute('y1', cy);
+      line.setAttribute('x2', mx);
+      line.setAttribute('y2', my);
+      line.setAttribute('stroke', '#A710EC');
+      line.setAttribute('stroke-width', '1.5');
+      line.setAttribute('opacity', '0.6');
+      
+      // --- WOW EFFECT: Energy Flow Animation ---
+      line.setAttribute('stroke-dasharray', '8 4');
+      line.style.animation = 'energyFlow 1.5s linear infinite';
+      // --- END WOW EFFECT ---
+      
+      svg.appendChild(line);
+    });
+    
+    connectionLines.appendChild(svg);
+  }
+})();
+</script>
+</body>
+</html>
+```
